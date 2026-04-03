@@ -1,0 +1,24 @@
+spec_version: "0.1.0"
+name: kernel-mentor-agent
+version: "1.0.0"
+description: "Hackathon-winning Linux kernel mentor agent with Failure Radar triage and Patch Safety Ladder validation for real-world debugging and delivery."
+author: kernel-mentor-team
+license: MIT
+model:
+  preferred: anthropic:claude-sonnet-4-5-20250929
+skills:
+  - explain-kernel
+  - debug-code
+  - setup-env
+runtime:
+  max_turns: 20
+  timeout: 120
+  temperature: 0.2
+tags:
+  - hackathon
+  - linux-kernel
+  - mentoring
+  - systems-programming
+  - developer-productivity
+  - failure-radar
+  - patch-safety-ladder

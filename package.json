@@ -1,0 +1,16 @@
+{
+  "name": "kernel-agent",
+  "version": "1.0.0",
+  "description": "`kernel-mentor-agent` is a hackathon-grade AI mentor for Linux kernel development that helps engineers move from confusion to confident action.   It combines deep kernel knowledge with practical delivery discipline, so teams can explain internals, debug failures, and set up reliable environments quickly.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "gitclaw": "^1.2.0"
+  }
+}
