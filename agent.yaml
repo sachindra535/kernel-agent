@@ -5,7 +5,9 @@ description: "Hackathon-winning Linux kernel mentor agent with Failure Radar tri
 author: kernel-mentor-team
 license: MIT
 model:
-  preferred: anthropic:claude-sonnet-4-5-20250929
+  preferred: openai:gpt-4o-mini
+  fallback:
+    - anthropic:claude-sonnet-4-5-20250929
 skills:
   - explain-kernel
   - debug-code
