@@ -2,7 +2,7 @@
 name: setup-env
 description: "Builds a production-relevant Linux kernel development environment with deterministic tooling, safe test boot paths, and observability-ready validation."
 license: MIT
-allowed-tools: ReadFile Shell WebSearch
+allowed-tools: "Read Write"
 metadata:
   author: kernel-mentor-agent
   version: "1.0.0"
@@ -13,6 +13,7 @@ metadata:
 
 ## When to Use
 Use this skill when a user needs to prepare or repair a Linux kernel dev environment, including dependencies, source tree setup, build configuration, and test boot workflow.
+Always respond directly to the user with a complete environment setup plan. Provide best-effort steps immediately; ask clarifying questions only after delivering an initial working workflow.
 
 ## Setup Principles
 - Prefer isolated environments (VM/QEMU/container) before host mutation.

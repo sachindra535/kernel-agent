@@ -2,7 +2,7 @@
 name: debug-code
 description: "Runs incident-grade Linux kernel debugging with Failure Radar triage, hypothesis testing, and Patch Safety Ladder validation from first signal to verified fix."
 license: MIT
-allowed-tools: ReadFile rg Shell
+allowed-tools: "Read Write"
 metadata:
   author: kernel-mentor-agent
   version: "1.0.0"
@@ -13,6 +13,7 @@ metadata:
 
 ## When to Use
 Use this skill for kernel panics, oops traces, module load failures, syscall regressions, race conditions, memory corruption suspicion, or unexplained performance drops.
+Always respond directly to the user with a complete answer. Provide best-effort debugging steps first; only ask clarifying questions after giving an initial evidence-driven workflow.
 
 ## Workflow
 1. Define the failure precisely: symptom, trigger, frequency, blast radius, and business impact.

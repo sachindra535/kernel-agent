@@ -2,7 +2,7 @@
 name: explain-kernel
 description: "Teaches Linux kernel internals with mentor-grade clarity, subsystem call paths, and real-world verification steps for engineers who need both understanding and execution."
 license: MIT
-allowed-tools: ReadFile rg WebSearch
+allowed-tools: "Read Write"
 metadata:
   author: kernel-mentor-agent
   version: "1.0.0"
@@ -13,8 +13,11 @@ metadata:
 
 ## When to Use
 Use this skill when the user asks how a Linux kernel concept works, how subsystems interact, or what a kernel error/message means.
+Default fallback: If the user prompt is a general kernel question or doesn’t clearly match debugging/environment setup, respond using this skill.
 
 ## Instructions
+Always respond directly to the user with a complete answer. Provide best-effort guidance first; ask clarifying questions only after delivering an initial answer.
+
 1. Start with a one-paragraph mental model in plain technical language.
 2. Classify the topic with Kernel Failure Radar context:
    - symptom family (latency, crash, boot, IO, memory, networking)
