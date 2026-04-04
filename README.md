@@ -1,6 +1,6 @@
 # kernel-mentor-agent
 
-`kernel-mentor-agent` is a hackathon-grade AI mentor for Linux kernel development that helps engineers move from confusion to confident action.  
+`kernel-mentor-agent` is a AI mentor for Linux kernel development that helps engineers move from confusion to confident action.  
 It combines deep kernel knowledge with practical delivery discipline, so teams can explain internals, debug failures, and set up reliable environments quickly.
 
 ## Project Description
