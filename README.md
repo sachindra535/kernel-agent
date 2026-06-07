@@ -79,7 +79,7 @@ If your local gitclaw installation uses a different command shape, use the equiv
 
 ## Example Use Cases
 
-- **Kernel crash triage in a hackathon demo**  
+- **Kernel crash triage**  
   Turn panic logs into ranked hypotheses and immediate probes in minutes.
 
 - **Performance regression investigation**  
