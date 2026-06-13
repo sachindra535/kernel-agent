@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>kernel-mentor-agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:         #0a0c0e;
+      --bg2:        #0f1214;
+      --bg3:        #141820;
+      --surface:    #161b24;
+      --border:     #1e2733;
+      --green:      #39ff8f;
+      --green-dim:  #1aff6e33;
+      --green-glow: 0 0 20px #39ff8f44, 0 0 60px #39ff8f18;
+      --amber:      #ffb020;
+      --amber-dim:  #ffb02022;
+      --red:        #ff4d5a;
+      --text:       #d4dce8;
+      --text-dim:   #6b7b8f;
+      --text-bright:#f0f6ff;
+      --mono:       'JetBrains Mono', monospace;
+      --sans:       'Space Grotesk', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* ── SCANLINE OVERLAY ── */
+    body::before {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,0,0,0.06) 2px,
+        rgba(0,0,0,0.06) 4px
+      );
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0;
+      background: rgba(10,12,14,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+      padding: 0 2rem;
+      height: 56px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .nav-brand {
+      font-family: var(--mono);
+      font-size: 0.85rem;
+      color: var(--green);
+      letter-spacing: 0.05em;
+      text-decoration: none;
+    }
+    .nav-brand span { color: var(--text-dim); }
+    .nav-links {
+      display: flex; gap: 2rem; list-style: none;
+    }
+    .nav-links a {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-decoration: none;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--green); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 7rem 2rem 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* radial grid bg */
+    .hero::after {
+      content: '';
+      position: absolute; inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% 40%, #1aff6e09 0%, transparent 70%),
+        linear-gradient(var(--border) 1px, transparent 1px) 0 0 / 40px 40px,
+        linear-gradient(90deg, var(--border) 1px, transparent 1px) 0 0 / 40px 40px;
+      pointer-events: none;
+    }
+
+    .hero-inner {
+      position: relative; z-index: 1;
+      max-width: 860px;
+      text-align: center;
+    }
+
+    .hero-eyebrow {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 1.5rem;
+      display: inline-flex; align-items: center; gap: 0.6rem;
+    }
+    .hero-eyebrow::before, .hero-eyebrow::after {
+      content: '';
+      display: block; width: 32px; height: 1px;
+      background: var(--green);
+      opacity: 0.5;
+    }
+
+    .hero-title {
+      font-family: var(--mono);
+      font-size: clamp(2.2rem, 6vw, 4.4rem);
+      font-weight: 700;
+      color: var(--text-bright);
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      margin-bottom: 1rem;
+    }
+    .hero-title .accent { color: var(--green); text-shadow: var(--green-glow); }
+
+    .hero-sub {
+      font-size: 1.1rem;
+      color: var(--text-dim);
+      max-width: 560px;
+      margin: 0 auto 2.5rem;
+      line-height: 1.7;
+    }
+
+    .hero-cta {
+      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    }
+    .btn {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 0.75rem 1.75rem;
+      border-radius: 4px;
+      transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 0.5rem;
+    }
+    .btn-primary {
+      background: var(--green);
+      color: var(--bg);
+      font-weight: 700;
+    }
+    .btn-primary:hover {
+      box-shadow: var(--green-glow);
+      transform: translateY(-1px);
+    }
+    .btn-ghost {
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-ghost:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    /* ── TERMINAL BLOCK ── */
+    .terminal-wrap {
+      margin-top: 3.5rem;
+      width: 100%;
+      max-width: 640px;
+      text-align: left;
+    }
+    .terminal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 32px 64px rgba(0,0,0,0.5), inset 0 0 0 1px rgba(255,255,255,0.03);
+    }
+    .terminal-bar {
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border);
+      padding: 0.65rem 1rem;
+      display: flex; align-items: center; gap: 0.5rem;
+    }
+    .dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-r { background: #ff5f56; }
+    .dot-y { background: #ffbd2e; }
+    .dot-g { background: #27c93f; }
+    .terminal-title {
+      font-family: var(--mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin-left: auto;
+      margin-right: auto;
+      transform: translateX(20px);
+    }
+    .terminal-body {
+      padding: 1.25rem 1.5rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.8;
+    }
+    .t-prompt { color: var(--green); }
+    .t-cmd { color: var(--text-bright); }
+    .t-comment { color: var(--text-dim); }
+    .t-out { color: #7ecfff; }
+    .t-warn { color: var(--amber); }
+    .t-cursor {
+      display: inline-block;
+      width: 8px; height: 1em;
+      background: var(--green);
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── SECTION ── */
+    section { padding: 6rem 2rem; }
+    .section-inner { max-width: 1080px; margin: 0 auto; }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--green);
+      margin-bottom: 0.75rem;
+    }
+    .section-title {
+      font-family: var(--mono);
+      font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 1rem;
+      line-height: 1.2;
+    }
+    .section-lead {
+      color: var(--text-dim);
+      max-width: 560px;
+      margin-bottom: 3rem;
+      font-size: 1.05rem;
+    }
+
+    /* ── FEATURE GRID ── */
+    .features {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .feat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .feat-card {
+      background: var(--bg2);
+      padding: 2rem;
+      transition: background 0.2s;
+    }
+    .feat-card:hover { background: var(--surface); }
+
+    .feat-tag {
+      font-family: var(--mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+    .feat-icon {
+      width: 40px; height: 40px;
+      border: 1px solid var(--green);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      margin-bottom: 1rem;
+      background: var(--green-dim);
+      font-family: var(--mono);
+      font-size: 1rem;
+      color: var(--green);
+    }
+    .feat-name {
+      font-family: var(--mono);
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 0.5rem;
+    }
+    .feat-desc {
+      font-size: 0.88rem;
+      color: var(--text-dim);
+      line-height: 1.65;
+    }
+
+    /* ── LADDER SECTION ── */
+    .ladder { background: var(--bg); }
+    .ladder-steps {
+      display: flex; flex-direction: column; gap: 0;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .ladder-step {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      border-bottom: 1px solid var(--border);
+      transition: background 0.2s;
+    }
+    .ladder-step:last-child { border-bottom: none; }
+    .ladder-step:hover { background: var(--surface); }
+    .step-level {
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--mono);
+      font-weight: 700;
+      font-size: 1.1rem;
+      border-right: 1px solid var(--border);
+      padding: 1.5rem 0;
+    }
+    .step-level.l0 { color: var(--text-dim); }
+    .step-level.l1 { color: #7ecfff; }
+    .step-level.l2 { color: var(--amber); }
+    .step-level.l3 { color: #ff8c42; }
+    .step-level.l4 { color: var(--red); }
+    .step-body { padding: 1.5rem; }
+    .step-title {
+      font-family: var(--mono);
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 0.3rem;
+    }
+    .step-desc { font-size: 0.85rem; color: var(--text-dim); }
+
+    /* ── SKILLS ── */
+    .skills-sec { background: var(--bg2); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    .skills-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+    }
+    .skill-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.75rem;
+      background: var(--bg);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .skill-card:hover {
+      border-color: var(--green);
+      box-shadow: 0 0 24px #39ff8f14;
+    }
+    .skill-path {
+      font-family: var(--mono);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-bottom: 0.75rem;
+    }
+    .skill-path .dir { color: var(--green); }
+    .skill-name {
+      font-family: var(--mono);
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 0.6rem;
+    }
+    .skill-desc { font-size: 0.86rem; color: var(--text-dim); line-height: 1.6; }
+
+    /* ── GITCLAW RUN ── */
+    .run-sec { background: var(--bg); }
+    .run-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 3rem;
+    }
+    .run-step {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      background: var(--bg2);
+    }
+    .run-num {
+      font-family: var(--mono);
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--green);
+      opacity: 0.3;
+      line-height: 1;
+      margin-bottom: 0.75rem;
+    }
+    .run-title {
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-bright);
+      margin-bottom: 0.4rem;
+    }
+    .run-cmd {
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 0.5rem 0.75rem;
+      color: var(--green);
+      margin-top: 0.75rem;
+    }
+    .run-desc { font-size: 0.84rem; color: var(--text-dim); }
+
+    /* ── PROMPTS ── */
+    .prompts-list {
+      display: flex; flex-direction: column; gap: 0.75rem;
+    }
+    .prompt-item {
+      display: flex; align-items: flex-start; gap: 1rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      transition: border-color 0.2s;
+    }
+    .prompt-item:hover { border-color: var(--green); }
+    .prompt-prefix { color: var(--green); flex-shrink: 0; }
+    .prompt-text { color: var(--text); line-height: 1.5; }
+
+    /* ── STRUCTURE ── */
+    .struct-sec { background: var(--bg2); border-top: 1px solid var(--border); }
+    .struct-tree {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.75rem 2rem;
+      line-height: 2;
+      overflow-x: auto;
+    }
+    .tree-dir  { color: var(--green); }
+    .tree-file { color: var(--text); }
+    .tree-conn { color: var(--text-dim); }
+    .tree-note { color: var(--text-dim); font-style: italic; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 2rem;
+      text-align: center;
+    }
+    .footer-text {
+      font-family: var(--mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+    .footer-text a { color: var(--green); text-decoration: none; }
+    .footer-text a:hover { text-decoration: underline; }
+
+    /* ── RESPONSIVE ── */
+    @media (max-width: 600px) {
+      nav { padding: 0 1rem; }
+      .nav-links { display: none; }
+      section { padding: 4rem 1rem; }
+      .hero { padding: 5rem 1rem 3rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a class="nav-brand" href="#">
+      <span>~/</span>kernel-mentor-agent
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#ladder">Ladder</a></li>
+      <li><a href="#skills">Skills</a></li>
+      <li><a href="#run">Run</a></li>
+    </ul>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-inner">
+      <div class="hero-eyebrow">gitclaw agent</div>
+
+      <h1 class="hero-title">
+        Linux Kernel<br />
+        <span class="accent">Mentor Agent</span>
+      </h1>
+
+      <p class="hero-sub">
+        A high-trust AI mentor that transforms kernel confusion into confident action —
+        combining expert-level internals knowledge with incident-grade debugging discipline.
+      </p>
+
+      <div class="hero-cta">
+        <a href="#run" class="btn btn-primary">▶ gitclaw run .</a>
+        <a href="https://github.com/sachindra535/kernel-agent" target="_blank" class="btn btn-ghost">
+          ↗ View on GitHub
+        </a>
+      </div>
+
+      <div class="terminal-wrap">
+        <div class="terminal">
+          <div class="terminal-bar">
+            <div class="dot dot-r"></div>
+            <div class="dot dot-y"></div>
+            <div class="dot dot-g"></div>
+            <span class="terminal-title">kernel-mentor-agent — bash</span>
+          </div>
+          <div class="terminal-body">
+            <div><span class="t-prompt">$</span> <span class="t-cmd">gitclaw run .</span></div>
+            <div><span class="t-out">✔ agent: kernel-mentor-agent v1.0.0</span></div>
+            <div><span class="t-out">✔ skills: explain-kernel, debug-code, setup-env</span></div>
+            <div><span class="t-out">✔ model: claude-sonnet-4-5</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-prompt">agent&gt;</span> <span class="t-cmd">Debug this kernel panic from dmesg</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-warn">⬡ Kernel Failure Radar — Subsystem: mm / slab</span></div>
+            <div><span class="t-out">  Hypothesis 1 [HIGH]: use-after-free in kmem_cache_alloc</span></div>
+            <div><span class="t-out">  Hypothesis 2 [MED]:  double-free via kfree on corrupt ptr</span></div>
+            <div>&nbsp;</div>
+            <div><span class="t-prompt">agent&gt;</span> <span class="t-cursor"></span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURES -->
+  <section class="features" id="features">
+    <div class="section-inner">
+      <div class="section-label">// capabilities</div>
+      <h2 class="section-title">What the agent can do</h2>
+      <p class="section-lead">
+        Three focused skills. Two signature features. Built for engineers shipping hard systems work under pressure.
+      </p>
+
+      <div class="feat-grid">
+        <div class="feat-card">
+          <div class="feat-tag">Advanced Feature #1</div>
+          <div class="feat-icon">⬡</div>
+          <div class="feat-name">Kernel Failure Radar</div>
+          <div class="feat-desc">
+            Maps sparse failure signals — panic text, dmesg snippets, perf anomalies — to likely subsystems.
+            Returns confidence-ranked hypotheses, the three highest-yield probe commands, and one fast falsification test per hypothesis.
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-tag">Advanced Feature #2</div>
+          <div class="feat-icon">▲</div>
+          <div class="feat-name">Patch Safety Ladder</div>
+          <div class="feat-desc">
+            Enforces risk-tiered execution (L0–L4) so kernel changes are validated with rollback and observability hooks before any rollout. Speed without reckless breakage.
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-tag">Explain Skill</div>
+          <div class="feat-icon">◎</div>
+          <div class="feat-name">Mentor-Grade Explanations</div>
+          <div class="feat-desc">
+            Layered outputs: executive summary → kernel call path walkthrough → key structs and APIs → command-level verification steps.
+            Teaches while solving.
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-tag">Debug Skill</div>
+          <div class="feat-icon">⌖</div>
+          <div class="feat-name">Incident-Ready Debug Flow</div>
+          <div class="feat-desc">
+            Structured root-cause workflow with reproducible diagnostics and explicit decision gates. Non-destructive probes first. Prioritizes evidence over intuition.
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-tag">Setup Skill</div>
+          <div class="feat-icon">⬛</div>
+          <div class="feat-name">Environment Setup</div>
+          <div class="feat-desc">
+            Profile-based guidance for <code style="color:var(--green)">fast-lab</code>, <code style="color:var(--green)">repro-lab</code>, and <code style="color:var(--green)">incident-lab</code>.
+            Readiness scorecards and reproducible build configs for team consistency.
+          </div>
+        </div>
+        <div class="feat-card">
+          <div class="feat-tag">Runtime</div>
+          <div class="feat-icon">⚙</div>
+          <div class="feat-name">gitclaw Compatible</div>
+          <div class="feat-desc">
+            Complete <code style="color:var(--green)">gitagent</code> package layout.
+            Runs via <code style="color:var(--green)">gitclaw run .</code> with 20-turn context, 0.2 temperature, and 120s timeout.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PATCH SAFETY LADDER -->
+  <section class="ladder" id="ladder">
+    <div class="section-inner">
+      <div class="section-label">// patch safety ladder</div>
+      <h2 class="section-title">Risk-tiered kernel change execution</h2>
+      <p class="section-lead">
+        Every change recommendation comes with an explicit ladder level. No patch reaches production without rollback instructions and monitoring hooks.
+      </p>
+
+      <div class="ladder-steps">
+        <div class="ladder-step">
+          <div class="step-level l0">L0</div>
+          <div class="step-body">
+            <div class="step-title">Observe only</div>
+            <div class="step-desc">No system mutation. Read dmesg, journalctl, perf events, tracepoints. Establish baseline evidence before touching anything.</div>
+          </div>
+        </div>
+        <div class="ladder-step">
+          <div class="step-level l1">L1</div>
+          <div class="step-body">
+            <div class="step-title">Reproduce and isolate</div>
+            <div class="step-desc">Reproduce the failure in a safe sandbox — VM, container, or QEMU. Isolate the minimal reproducible case before proposing changes.</div>
+          </div>
+        </div>
+        <div class="ladder-step">
+          <div class="step-level l2">L2</div>
+          <div class="step-body">
+            <div class="step-title">Minimal patch + targeted verification</div>
+            <div class="step-desc">Apply the smallest possible change. Run build checks, targeted boot tests, and unit-level regression verification.</div>
+          </div>
+        </div>
+        <div class="ladder-step">
+          <div class="step-level l3">L3</div>
+          <div class="step-body">
+            <div class="step-title">Broader regression and performance checks</div>
+            <div class="step-desc">Run full regression suites (LTP, kselftest) and performance benchmarks. Confirm no latency, throughput, or stability regressions.</div>
+          </div>
+        </div>
+        <div class="ladder-step">
+          <div class="step-level l4">L4</div>
+          <div class="step-body">
+            <div class="step-title">Rollout-ready</div>
+            <div class="step-desc">Complete rollback plan documented. Observability and alerting hooks in place. Staged rollout strategy defined before production deployment.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS -->
+  <section class="skills-sec" id="skills">
+    <div class="section-inner">
+      <div class="section-label">// skills/</div>
+      <h2 class="section-title">Three specialized skill modules</h2>
+      <p class="section-lead">
+        Each skill is a structured Markdown module with YAML frontmatter that keeps responses consistent, production-aware, and transferable.
+      </p>
+
+      <div class="skills-grid">
+        <div class="skill-card">
+          <div class="skill-path"><span class="dir">skills/</span>explain-kernel<span class="dir">/SKILL.md</span></div>
+          <div class="skill-name">explain-kernel</div>
+          <div class="skill-desc">
+            Explains kernel internals in layers: mental model first, then the kernel call path, key structs and APIs, and finally verification commands.
+            Subsystem-native vocabulary — scheduler, mm, vfs, net, block, bpf.
+          </div>
+        </div>
+        <div class="skill-card">
+          <div class="skill-path"><span class="dir">skills/</span>debug-code<span class="dir">/SKILL.md</span></div>
+          <div class="skill-name">debug-code</div>
+          <div class="skill-desc">
+            Evidence-driven triage workflow. Starts non-destructive: dmesg, strace, bpftrace, perf. Maps every error output to a concrete next action. Never skips interpretation.
+          </div>
+        </div>
+        <div class="skill-card">
+          <div class="skill-path"><span class="dir">skills/</span>setup-env<span class="dir">/SKILL.md</span></div>
+          <div class="skill-name">setup-env</div>
+          <div class="skill-desc">
+            Profile-based environment bootstrap: fast-lab for speed, repro-lab for reproducibility, incident-lab for forensics. Includes readiness scorecards and cross-contributor consistency checks.
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RUN -->
+  <section class="run-sec" id="run">
+    <div class="section-inner">
+      <div class="section-label">// how to run</div>
+      <h2 class="section-title">Up in three commands</h2>
+      <p class="section-lead">Prerequisite: install and configure <code style="color:var(--green); font-family:var(--mono)">gitclaw</code> on your machine.</p>
+
+      <div class="run-steps">
+        <div class="run-step">
+          <div class="run-num">01</div>
+          <div class="run-title">Clone the repository</div>
+          <div class="run-desc">Get the agent package onto your local machine.</div>
+          <div class="run-cmd">git clone https://github.com/sachindra535/kernel-agent</div>
+        </div>
+        <div class="run-step">
+          <div class="run-num">02</div>
+          <div class="run-title">Enter the project</div>
+          <div class="run-desc">Navigate to the agent root directory.</div>
+          <div class="run-cmd">cd kernel-agent</div>
+        </div>
+        <div class="run-step">
+          <div class="run-num">03</div>
+          <div class="run-title">Start the agent</div>
+          <div class="run-desc">gitclaw picks up agent.yaml automatically.</div>
+          <div class="run-cmd">gitclaw run .</div>
+        </div>
+      </div>
+
+      <div class="section-label" style="margin-bottom:1rem">// example prompts</div>
+      <div class="prompts-list">
+        <div class="prompt-item">
+          <span class="prompt-prefix">agent&gt;</span>
+          <span class="prompt-text">Explain why softirqs can cause latency spikes on multicore systems.</span>
+        </div>
+        <div class="prompt-item">
+          <span class="prompt-prefix">agent&gt;</span>
+          <span class="prompt-text">Debug this kernel panic from dmesg and give me next commands.</span>
+        </div>
+        <div class="prompt-item">
+          <span class="prompt-prefix">agent&gt;</span>
+          <span class="prompt-text">Set up a reproducible kernel debug environment for Ubuntu on x86_64.</span>
+        </div>
+        <div class="prompt-item">
+          <span class="prompt-prefix">agent&gt;</span>
+          <span class="prompt-text">Identify whether this latency regression is scheduler, mm, block I/O, or networking.</span>
+        </div>
+        <div class="prompt-item">
+          <span class="prompt-prefix">agent&gt;</span>
+          <span class="prompt-text">Walk me through the memory fault handling path from page fault to OOM killer.</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STRUCTURE -->
+  <section class="struct-sec">
+    <div class="section-inner">
+      <div class="section-label">// project structure</div>
+      <h2 class="section-title">What's inside</h2>
+
+      <div class="struct-tree">
+<span class="tree-dir">kernel-mentor-agent/</span>
+<span class="tree-conn">├── </span><span class="tree-file">agent.yaml</span>       <span class="tree-note"># model, skills, runtime config</span>
+<span class="tree-conn">├── </span><span class="tree-file">SOUL.md</span>          <span class="tree-note"># identity: senior engineer + incident commander</span>
+<span class="tree-conn">├── </span><span class="tree-file">RULES.md</span>         <span class="tree-note"># non-negotiable safety guardrails</span>
+<span class="tree-conn">├── </span><span class="tree-file">memory/</span>
+<span class="tree-conn">│   └── </span><span class="tree-file">MEMORY.md</span>    <span class="tree-note"># persistent agent context</span>
+<span class="tree-conn">└── </span><span class="tree-dir">skills/</span>
+<span class="tree-conn">    ├── </span><span class="tree-dir">explain-kernel/</span>
+<span class="tree-conn">    │   └── </span><span class="tree-file">SKILL.md</span>
+<span class="tree-conn">    ├── </span><span class="tree-dir">debug-code/</span>
+<span class="tree-conn">    │   └── </span><span class="tree-file">SKILL.md</span>
+<span class="tree-conn">    └── </span><span class="tree-dir">setup-env/</span>
+<span class="tree-conn">        └── </span><span class="tree-file">SKILL.md</span>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="footer-text">
+      Built with <a href="https://github.com/sachindra535/kernel-agent">kernel-mentor-agent</a> · 
+      Deployed via GitHub Actions · 
+      Runs on <a href="https://github.com/sachindra535/kernel-agent">gitclaw</a>
+    </div>
+  </footer>
+
+</body>
+</html>
