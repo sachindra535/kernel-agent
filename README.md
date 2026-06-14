@@ -1,114 +1,128 @@
 # kernel-mentor-agent
 
-`kernel-mentor-agent` is a AI mentor for Linux kernel development that helps engineers move from confusion to confident action.  
-It combines deep kernel knowledge with practical delivery discipline, so teams can explain internals, debug failures, and set up reliable environments quickly.
+A Linux kernel mentoring and debugging agent built for GitClaw.
 
-## Project Description
+`kernel-mentor-agent` helps engineers understand kernel internals, debug failures, and build reproducible development environments using structured, production-focused workflows.
 
-This project is a complete gitagent package focused on real-world Linux kernel workflows:
-- Understand complex kernel behavior in plain but precise language.
-- Diagnose kernel and low-level system failures with evidence-driven triage.
-- Build reproducible, safe kernel development environments.
+It combines:
 
-The agent is designed for both learning and shipping under pressure.
+- Kernel Failure Radar
+- Patch Safety Ladder
+- Mentor-grade explanations
+- Incident-driven debugging
+- Environment setup guidance
 
-## Features
+---
 
-- **Kernel Failure Radar (Advanced Feature #1)**  
-  Rapidly maps symptoms to likely subsystems, ranks hypotheses by confidence, and suggests the highest-yield next probes.
+# Features
 
-- **Patch Safety Ladder (Advanced Feature #2)**  
-  Enforces risk-tiered execution (L0-L4) so kernel changes are validated with rollback and observability before rollout.
+## Kernel Failure Radar
 
-- **Mentor-Grade Explanations**  
-  Layered outputs: mental model, kernel call path, key structs/APIs, and verification steps.
+Rapidly classifies failures into likely subsystems and provides:
 
-- **Incident-Ready Debugging Flow**  
-  Structured root cause workflow with reproducible diagnostics and decision gates.
+- Confidence-ranked hypotheses
+- Highest-yield diagnostic commands
+- Fast falsification tests
+- Next investigation steps
 
-- **Production-Relevant Environment Setup**  
-  Profile-based setup guidance (`fast-lab`, `repro-lab`, `incident-lab`) plus readiness scorecards.
+Example:
 
-## How It Works
+```text
+Kernel panic
+↓
+Failure Radar
+↓
+Memory / Driver / Scheduler hypothesis ranking
+↓
+Verification commands
+```
 
-The agent is composed of:
+---
 
-- `agent.yaml`  
-  Core metadata, model preference, skill registration, and tags.
+## Patch Safety Ladder
 
-- `SOUL.md`  
-  Personality and behavioral identity: senior kernel engineer + incident commander + coach.
+Every recommendation is tagged with a risk level:
 
-- `RULES.md`  
-  Non-negotiable guardrails for safety, evidence quality, and operational clarity.
+| Level | Meaning |
+|---------|---------|
+| L0 | Observe only |
+| L1 | Reproduce safely |
+| L2 | Minimal targeted change |
+| L3 | Regression and performance validation |
+| L4 | Rollout-ready with rollback plan |
 
-- `skills/`  
-  Three specialized skills:
-  - `explain-kernel`
-  - `debug-code`
-  - `setup-env`
+---
 
-Each skill contains structured frontmatter and execution instructions so responses stay consistent, useful, and production-aware.
+## Mentor-Grade Explanations
 
-## Tech Stack
+Every explanation includes:
 
-- **Agent Framework:** gitagent-compatible project layout
-- **Core Runtime Model:** GPT-class LLM (configured in `agent.yaml`)
-- **Domain:** Linux kernel systems engineering
-- **Skill Format:** Markdown skills with YAML frontmatter
-- **Operating Context:** CLI-first Linux workflows, trace/log/perf debugging patterns
+- Mental model
+- Kernel call path
+- Important structs
+- Relevant source files
+- Verification steps
 
-## How to Run (gitclaw)
+---
 
-> Prerequisite: install and configure `gitclaw` on your machine.
+## Specialized Skills
 
-1. Open the project directory:
-   ```bash
-   cd kernel-agent
-   ```
-2. Start the agent with gitclaw:
-   ```bash
-   gitclaw run .
-   ```
-3. Ask task-focused prompts, for example:
-   - "Explain why softirqs can cause latency spikes on multicore systems."
-   - "Debug this kernel panic from dmesg and give me next commands."
-   - "Set up a reproducible kernel debug environment for Ubuntu on x86_64."
+### explain-kernel
 
-If your local gitclaw installation uses a different command shape, use the equivalent run command while keeping the project root as input.
+Explains Linux kernel concepts and subsystem interactions.
 
-## Example Use Cases
+Examples:
 
-- **Kernel crash triage**  
-  Turn panic logs into ranked hypotheses and immediate probes in minutes.
+```bash
+gitclaw run . "Use the explain-kernel skill to explain how the Linux scheduler works"
+```
 
-- **Performance regression investigation**  
-  Identify whether the bottleneck is scheduler, memory, block I/O, or networking path.
+```bash
+gitclaw run . "Use the explain-kernel skill to explain how softirqs work"
+```
 
-- **Onboarding new systems engineers**  
-  Teach kernel internals through practical command-driven explanations.
+---
 
-- **Safer patch iteration**  
-  Use the Patch Safety Ladder to avoid risky, unvalidated kernel changes.
+### debug-code
 
-- **Environment bootstrap for team consistency**  
-  Standardize build/debug setup across contributors with profile-based instructions.
+Incident-grade debugging workflow.
 
-## Why This Is Useful
+Examples:
 
-- **Cuts time-to-diagnosis** for complex kernel failures.
-- **Raises engineering confidence** with explicit validation and rollback planning.
-- **Improves team learning velocity** by teaching while solving.
-- **Bridges theory and operations** with practical, command-level outputs.
-- **Fits hackathon reality**: fast iteration, high complexity, limited time.
+```bash
+gitclaw run . "Use the debug-code skill to analyze this kernel panic"
+```
 
-## Project Structure
+```bash
+gitclaw run . "Use the debug-code skill to debug a scheduler latency spike"
+```
+
+---
+
+### setup-env
+
+Builds safe kernel development environments.
+
+Examples:
+
+```bash
+gitclaw run . "Use the setup-env skill to create an Ubuntu kernel development lab"
+```
+
+```bash
+gitclaw run . "Use the setup-env skill to set up a kernel debugging environment for Arch Linux"
+```
+
+---
+
+# Project Structure
 
 ```text
 kernel-mentor-agent/
 ├── agent.yaml
 ├── SOUL.md
 ├── RULES.md
+├── memory/
 └── skills/
     ├── explain-kernel/
     │   └── SKILL.md
@@ -120,4 +134,144 @@ kernel-mentor-agent/
 
 ---
 
-Built to mentor like a senior kernel engineer and execute like an incident response tool.
+# Local LLM Setup (Free)
+
+This project can run completely free using Ollama.
+
+## 1. Install Ollama
+
+Arch Linux:
+
+```bash
+sudo pacman -S ollama
+```
+
+Enable service:
+
+```bash
+sudo systemctl enable --now ollama
+```
+
+Verify:
+
+```bash
+systemctl status ollama
+```
+
+---
+
+## 2. Download a Model
+
+Recommended:
+
+```bash
+ollama pull qwen3:8b
+```
+
+Other options:
+
+```bash
+ollama pull llama3.1:8b
+```
+
+```bash
+ollama pull mistral:7b
+```
+
+---
+
+## 3. Configure GitClaw
+
+Set environment variables:
+
+```bash
+export OPENAI_API_KEY=dummy
+export GITCLAW_MODEL_BASE_URL=http://localhost:11434/v1
+```
+
+These allow GitClaw to use the local Ollama endpoint.
+
+---
+
+## 4. Update agent.yaml
+
+Example:
+
+```yaml
+model:
+  preferred: openai:qwen3:8b
+```
+
+---
+
+## 5. Run the Agent
+
+Interactive mode:
+
+```bash
+gitclaw
+```
+
+or
+
+```bash
+gitclaw run .
+```
+
+---
+
+# Usage
+
+The recommended format is:
+
+```bash
+gitclaw run . "Use the <skill-name> skill to <task>"
+```
+
+Examples:
+
+```bash
+gitclaw run . "Use the explain-kernel skill to explain how the Linux scheduler works"
+```
+
+```bash
+gitclaw run . "Use the explain-kernel skill to explain virtual memory"
+```
+
+```bash
+gitclaw run . "Use the debug-code skill to debug a kernel panic"
+```
+
+```bash
+gitclaw run . "Use the setup-env skill to create a kernel development environment on Arch Linux"
+```
+
+---
+
+# Example Output
+
+The agent typically provides:
+
+1. Mental model
+2. Subsystem classification
+3. Kernel call path
+4. Important structs/APIs
+5. Verification commands
+6. Patch Safety Ladder recommendations
+7. Concrete next actions
+
+---
+
+# Why Use This Agent?
+
+- Faster kernel debugging
+- Better subsystem understanding
+- Safer patch development
+- Consistent troubleshooting workflows
+- Works entirely with free local LLMs
+
+---
+
+# License
+
+MIT License
