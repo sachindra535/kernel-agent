@@ -342,6 +342,86 @@
 
     .err-bubble { font-size: 0.75rem; color: var(--red); background: rgba(255,77,90,0.07); border: 1px solid rgba(255,77,90,0.22); border-radius: var(--r); padding: 0.6rem 0.85rem; }
 
+    /* ── TAB BAR ── */
+    .modal-tabs {
+      flex-shrink: 0;
+      display: flex; border-bottom: 1px solid var(--border);
+      background: var(--bg3);
+    }
+    .tab-btn {
+      flex: 1; font-family: var(--mono); font-size: 0.72rem;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      background: none; border: none; cursor: pointer;
+      color: var(--dim); padding: 0.65rem 0;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .tab-btn:hover { color: var(--text); }
+    .tab-btn.active { color: var(--green); border-bottom-color: var(--green); }
+
+    /* ── DMESG PASTE PANEL ── */
+    .paste-panel {
+      flex: 1; display: none; flex-direction: column;
+      overflow: hidden;
+    }
+    .paste-panel.visible { display: flex; }
+    .paste-header {
+      flex-shrink: 0; padding: 0.75rem 1rem 0.4rem;
+      display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;
+    }
+    .paste-label { font-size: 0.68rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+    .paste-badge {
+      font-size: 0.65rem; padding: 0.15rem 0.55rem;
+      border-radius: 99px; border: 1px solid var(--border);
+      color: var(--dim); display: none;
+    }
+    .paste-badge.show { display: inline-block; }
+    .paste-badge.panic  { border-color: var(--red);   color: var(--red); }
+    .paste-badge.oops   { border-color: var(--amber); color: var(--amber); }
+    .paste-badge.warn   { border-color: var(--amber); color: var(--amber); }
+    .paste-badge.trace  { border-color: var(--blue);  color: var(--blue); }
+    .paste-badge.dmesg  { border-color: var(--green); color: var(--green); }
+    .paste-linecount { font-size: 0.65rem; color: var(--dim); margin-left: auto; }
+    .paste-area-wrap { flex: 1; padding: 0.4rem 1rem; overflow: hidden; display: flex; flex-direction: column; }
+    .paste-area {
+      flex: 1; width: 100%;
+      background: var(--bg); border: 1px solid var(--border);
+      border-radius: var(--r); padding: 0.75rem 1rem;
+      font-family: var(--mono); font-size: 0.74rem;
+      color: var(--blue); line-height: 1.7;
+      resize: none; outline: none; transition: border-color 0.15s;
+    }
+    .paste-area::placeholder { color: var(--dim); font-size: 0.72rem; line-height: 1.9; }
+    .paste-area:focus { border-color: var(--green); }
+    .paste-actions {
+      flex-shrink: 0; padding: 0.5rem 1rem 0.7rem;
+      display: flex; gap: 0.5rem; align-items: center;
+    }
+    .paste-clear {
+      font-family: var(--mono); font-size: 0.68rem;
+      background: none; border: 1px solid var(--border);
+      border-radius: var(--r); color: var(--dim);
+      padding: 0.4rem 0.8rem; cursor: pointer;
+      letter-spacing: 0.05em; transition: all 0.15s;
+    }
+    .paste-clear:hover { border-color: var(--red); color: var(--red); }
+    .paste-hint { font-size: 0.65rem; color: var(--dim); line-height: 1.6; }
+    .paste-submit {
+      font-family: var(--mono); font-size: 0.75rem; font-weight: 700;
+      letter-spacing: 0.06em; text-transform: uppercase;
+      background: var(--green); color: var(--bg);
+      border: none; border-radius: var(--r);
+      padding: 0.45rem 1.25rem; cursor: pointer;
+      display: flex; align-items: center; gap: 0.4rem;
+      transition: all 0.15s; margin-left: auto;
+    }
+    .paste-submit:hover { box-shadow: var(--glow); transform: translateY(-1px); }
+    .paste-submit:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+    /* chat view wrapper */
+    .chat-view { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .chat-view.hidden { display: none; }
+
     /* modal input */
     .modal-input {
       flex-shrink: 0; padding: 0.75rem 1rem;
@@ -582,38 +662,66 @@
       ⚠ Worker URL not set. Edit <code>WORKER_URL</code> in index.html after deploying your Cloudflare Worker.
     </div>
 
-    <!-- messages -->
-    <div class="modal-msgs" id="modal-msgs">
-      <div class="chat-welcome" id="chat-welcome">
-        <div class="cw-icon">⬡</div>
-        <h3>kernel-mentor-agent</h3>
-        <p>Paste a kernel panic, ask about internals,<br/>or set up your dev environment.</p>
-        <div class="chat-chips">
-          <div class="chat-chip" onclick="chip(this)">Debug a kernel panic</div>
-          <div class="chat-chip" onclick="chip(this)">Explain the OOM killer</div>
-          <div class="chat-chip" onclick="chip(this)">How does CFS scheduler work?</div>
-          <div class="chat-chip" onclick="chip(this)">Set up a kernel dev environment</div>
-          <div class="chat-chip" onclick="chip(this)">Triage a memory corruption bug</div>
-          <div class="chat-chip" onclick="chip(this)">Walk me through the VFS layer</div>
+    <!-- TAB BAR -->
+    <div class="modal-tabs">
+      <button class="tab-btn active" id="tab-chat" onclick="switchTab('chat')">💬 Chat</button>
+      <button class="tab-btn" id="tab-paste" onclick="switchTab('paste')">⬡ Paste dmesg / panic</button>
+    </div>
+
+    <!-- CHAT VIEW -->
+    <div class="chat-view" id="chat-view">
+      <div class="modal-msgs" id="modal-msgs">
+        <div class="chat-welcome" id="chat-welcome">
+          <div class="cw-icon">⬡</div>
+          <h3>kernel-mentor-agent</h3>
+          <p>Ask about internals, or switch to the <strong style="color:var(--green)">Paste dmesg</strong> tab<br/>to drop in a real kernel panic for diagnosis.</p>
+          <div class="chat-chips">
+            <div class="chat-chip" onclick="chip(this)">Explain the OOM killer</div>
+            <div class="chat-chip" onclick="chip(this)">How does CFS scheduler work?</div>
+            <div class="chat-chip" onclick="chip(this)">Set up a kernel dev environment</div>
+            <div class="chat-chip" onclick="chip(this)">Triage a memory corruption bug</div>
+            <div class="chat-chip" onclick="chip(this)">Walk me through the VFS layer</div>
+            <div class="chat-chip" onclick="switchTab('paste')">⬡ Paste a kernel panic →</div>
+          </div>
         </div>
+      </div>
+      <div class="modal-input">
+        <div class="input-wrap">
+          <textarea id="chat-input" placeholder="Ask anything about kernel internals..." rows="1"
+            onkeydown="chatKey(event)" oninput="resize(this)"></textarea>
+          <button class="send-btn" id="send-btn" onclick="sendMsg()" title="Send">↑</button>
+        </div>
+        <div class="input-hint">Enter to send · Shift+Enter for new line · Free via Cloudflare Workers AI</div>
       </div>
     </div>
 
-    <!-- input -->
-    <div class="modal-input">
-      <div class="input-wrap">
-        <textarea id="chat-input" placeholder="Paste dmesg, describe a kernel issue, ask anything..." rows="1"
-          onkeydown="chatKey(event)" oninput="resize(this)"></textarea>
-        <button class="send-btn" id="send-btn" onclick="sendMsg()" title="Send">↑</button>
+    <!-- PASTE PANEL -->
+    <div class="paste-panel" id="paste-panel">
+      <div class="paste-header">
+        <span class="paste-label">// dmesg · panic · oops · trace</span>
+        <span class="paste-badge" id="paste-badge"></span>
+        <span class="paste-linecount" id="paste-linecount"></span>
       </div>
-      <div class="input-hint">Enter to send · Shift+Enter for new line · Free via Cloudflare Workers AI</div>
+      <div class="paste-area-wrap">
+        <textarea class="paste-area" id="paste-area"
+          placeholder="Paste dmesg, kernel panic, Oops, call trace, BUG report..."
+          oninput="analyzePaste(this.value)"
+        ></textarea>
+      </div>
+      <div class="paste-actions">
+        <span class="paste-hint" id="paste-hint">The agent will classify the subsystem, rank hypotheses, and give you the 3 highest-yield next commands.</span>
+        <button class="paste-clear" onclick="clearPaste()">✕ clear</button>
+        <button class="paste-submit" id="paste-submit" onclick="submitPaste()" disabled>
+          ⬡ Analyze
+        </button>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 // ── CONFIG ── Replace with your Cloudflare Worker URL after deploying
-const WORKER_URL = "https://kernel-mentor-agent.capy-underworld.workers.dev";
+const WORKER_URL = "YOUR_WORKER_URL_HERE";
 
 const SYSTEM = `You are kernel-mentor-agent, a high-trust Linux kernel mentor. You are equal parts senior kernel engineer, incident commander, and technical coach.
 
@@ -649,6 +757,114 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeChat();
 
 // chip suggestions
 function chip(el) { sendMsg(el.textContent); }
+
+// ── TAB SWITCHING ──
+function switchTab(tab) {
+  const chatView   = document.getElementById("chat-view");
+  const pastePanel = document.getElementById("paste-panel");
+  const tabChat    = document.getElementById("tab-chat");
+  const tabPaste   = document.getElementById("tab-paste");
+
+  if (tab === "chat") {
+    chatView.classList.remove("hidden");
+    pastePanel.classList.remove("visible");
+    tabChat.classList.add("active");
+    tabPaste.classList.remove("active");
+    document.getElementById("chat-input").focus();
+  } else {
+    chatView.classList.add("hidden");
+    pastePanel.classList.add("visible");
+    tabChat.classList.remove("active");
+    tabPaste.classList.add("active");
+    document.getElementById("paste-area").focus();
+  }
+}
+
+// ── PASTE ANALYSIS (client-side detection) ──
+const PANIC_PATTERNS = [
+  { re: /kernel null pointer dereference|unable to handle kernel/i, type: "panic",  label: "⚠ NULL POINTER PANIC" },
+  { re: /oops:|kernel oops/i,                                        type: "oops",   label: "⚠ KERNEL OOPS" },
+  { re: /call trace:|rip:\s+\S+/i,                                   type: "trace",  label: "⬡ CALL TRACE" },
+  { re: /bug:|bug in |kernel bug/i,                                   type: "oops",   label: "⚠ KERNEL BUG" },
+  { re: /oom.{0,20}killer|out of memory/i,                            type: "warn",   label: "⚠ OOM KILL" },
+  { re: /general protection fault|gpf/i,                              type: "panic",  label: "⚠ GP FAULT" },
+  { re: /stack overflow|stack-protector/i,                            type: "panic",  label: "⚠ STACK OVERFLOW" },
+  { re: /page fault|#pf:/i,                                           type: "panic",  label: "⚠ PAGE FAULT" },
+  { re: /hung_task|task .* blocked for/i,                             type: "warn",   label: "⚠ HUNG TASK" },
+  { re: /\[\s*[\d.]+\]/,                                              type: "dmesg",  label: "dmesg log" },
+];
+
+function analyzePaste(val) {
+  const badge    = document.getElementById("paste-badge");
+  const linecount= document.getElementById("paste-linecount");
+  const submit   = document.getElementById("paste-submit");
+  const hint     = document.getElementById("paste-hint");
+
+  const lines = val.trim().split("\n").filter(Boolean);
+  const hasContent = lines.length > 0;
+
+  // Line count
+  linecount.textContent = hasContent ? lines.length + " lines" : "";
+
+  // Detect type
+  let detected = null;
+  for (const p of PANIC_PATTERNS) {
+    if (p.re.test(val)) { detected = p; break; }
+  }
+
+  // Update badge
+  badge.className = "paste-badge";
+  if (detected && hasContent) {
+    badge.textContent = detected.label;
+    badge.classList.add("show", detected.type);
+    hint.textContent = "Ready to analyze. The agent will classify the subsystem, rank hypotheses, and give next commands.";
+  } else if (hasContent) {
+    badge.textContent = "kernel output";
+    badge.classList.add("show", "dmesg");
+    hint.textContent = "Paste detected. Hit Analyze and the agent will triage it.";
+  } else {
+    hint.textContent = "The agent will classify the subsystem, rank hypotheses, and give you the 3 highest-yield next commands.";
+  }
+
+  submit.disabled = !hasContent;
+}
+
+function clearPaste() {
+  const area = document.getElementById("paste-area");
+  area.value = "";
+  analyzePaste("");
+  area.focus();
+}
+
+// ── SUBMIT PASTE → sends to chat as structured prompt ──
+function submitPaste() {
+  const val = document.getElementById("paste-area").value.trim();
+  if (!val) return;
+
+  const badge = document.getElementById("paste-badge");
+  const detectedLabel = badge.textContent || "kernel output";
+
+  // Build a structured prompt for the agent
+  const prompt = `Analyze this kernel output using the Kernel Failure Radar:
+
+\`\`\`
+${val}
+\`\`\`
+
+Give me:
+1. Subsystem classification with confidence
+2. Top hypotheses ranked by likelihood
+3. The 3 highest-yield next commands to run
+4. One fast falsification test per hypothesis
+5. Patch Safety Ladder level for any proposed fix`;
+
+  // Clear paste area
+  clearPaste();
+
+  // Switch to chat tab and send
+  switchTab("chat");
+  sendMsg(prompt);
+}
 
 // textarea auto-resize
 function resize(el) {
