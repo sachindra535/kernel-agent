@@ -732,29 +732,84 @@ async function sendMsg(text) {
   history.push({ role: "user", content });
   if (!text) { input.value = ""; resize(input); }
   setBusy(true);
+
+  // Show typing indicator
   appendMsg("agent", "", true);
 
   try {
     const res = await fetch(WORKER_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: history, system: SYSTEM })
+      body: JSON.stringify({ messages: history })
     });
-    const data = await res.json();
+
+    // Remove typing dots once connection is established
     const typing = document.getElementById("typing-row");
     if (typing) typing.remove();
 
-    if (data.error) { showErr(data.error); }
-    else {
-      const reply = data.reply || "(no response)";
-      history.push({ role: "assistant", content: reply });
-      appendMsg("agent", reply);
+    const contentType = res.headers.get("content-type") || "";
+
+    // ── STREAMING path (SSE) ──
+    if (contentType.includes("text/event-stream")) {
+      // Create a live bubble to stream into
+      const msgs = document.getElementById("modal-msgs");
+      const row = document.createElement("div");
+      row.className = "msg-row agent";
+      const av = document.createElement("div");
+      av.className = "av ag"; av.textContent = "⬡";
+      const bub = document.createElement("div");
+      bub.className = "bubble";
+      row.appendChild(av); row.appendChild(bub);
+      msgs.appendChild(row);
+
+      let fullText = "";
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        // Parse SSE chunks — each line is "data: {...}"
+        const chunk = decoder.decode(value, { stream: true });
+        for (const line of chunk.split("\n")) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith("data:")) continue;
+          const raw = trimmed.slice(5).trim();
+          if (raw === "[DONE]") break;
+          try {
+            const parsed = JSON.parse(raw);
+            const token = parsed?.response ?? parsed?.choices?.[0]?.delta?.content ?? "";
+            if (token) {
+              fullText += token;
+              // Render markdown on every token so formatting appears live
+              bub.innerHTML = md(fullText);
+              msgs.scrollTop = msgs.scrollHeight;
+            }
+          } catch { /* skip malformed chunks */ }
+        }
+      }
+
+      // Save complete response to history
+      history.push({ role: "assistant", content: fullText });
+
+    // ── NON-STREAMING fallback (JSON) ──
+    } else {
+      const data = await res.json();
+      if (data.error) { showErr(data.error); }
+      else {
+        const reply = data.reply || "(no response)";
+        history.push({ role: "assistant", content: reply });
+        appendMsg("agent", reply);
+      }
     }
+
   } catch (err) {
     const typing = document.getElementById("typing-row");
     if (typing) typing.remove();
     showErr("Could not reach the worker: " + err.message);
   }
+
   setBusy(false);
 }
 
